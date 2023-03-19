@@ -112,6 +112,19 @@ added: 41654d88bcb56854
 ```
 
 ```
+❯ toke files 05b8b08a5d847095 4ec9cb9e0912eaac
+05b8b08a5d847095:
+[X]  1  100.0%  /Torrents/incompletes/Cosmos Laundromat/Cosmos Laundromat.en.srt[X]  2  100.0%  /Torrents/incompletes/Cosmos Laundromat/Cosmos Laundromat.es.srt
+[X]  3  100.0%  /Torrents/incompletes/Cosmos Laundromat/Cosmos Laundromat.fr.srt[X]  4  100.0%  /Torrents/incompletes/Cosmos Laundromat/Cosmos Laundromat.it.srt
+[X]  5  100.0%  /Torrents/incompletes/Cosmos Laundromat/Cosmos Laundromat.mp4
+[X]  6  100.0%  /Torrents/incompletes/Cosmos Laundromat/poster.jpg
+4ec9cb9e0912eaac:
+[X]  1  100.0%  /Torrents/incompletes/Big Buck Bunny/Big Buck Bunny.en.srt
+[X]  2  100.0%  /Torrents/incompletes/Big Buck Bunny/Big Buck Bunny.mp4
+[X]  3  100.0%  /Torrents/incompletes/Big Buck Bunny/poster.jpg
+```
+
+```
 ❯ toke stats
 download: 25MB/s, upload: 0KB/s, active: 4, stopped: 0, waiting: 0
 ```
@@ -125,7 +138,7 @@ Finishing downloads, you can check the downloaded files.
 263.6M	100.0%	   n/a	  0KB/s	Big Buck Bunny
 ```
 
-You can easily find what the usages below are.
+You can easily get to know what the usages below are.
 
 ```
 toke list
@@ -134,27 +147,27 @@ toke add /path-to/file.torrent "magnet:?xt=urn:btih:FFC7E738EAA4CD4EC..."
 toke add :dir=/mnt/mov :select-file=1,3-5 /path-to/file.torrent
 toke add :out=dad.png "https://my-webserver/pic/IMG_0422.png"
 toke pause 9ba47a7aa365473f cdacca57aef44ec6
+toke resume 9ba47a7aa365473f cdacca57aef44ec6
 toke co :max-tries=6 :max-concurrent-downloads=50
 toke files f81834e2c0d8d02f 615c023cf658b2a4
 ```
 
-I'll comment on several usages. You can change downloaded file name with 
-`:out=name` when you `toke add`.
+You can change downloading file name with `:out=new-name` when you `toke add`.
 
 ```
 toke add :out=dad.png "https://my-webserver/pic/IMG_0422.png"
 ```
 
-You can change temporary downloading directory with `:dir=new_folder_name` 
-when you `toke add`. And also you can select specific files to download in 
-this way, `:select-file=1,3-5`.
+You can change temporary downloading directory with `:dir=new-destination` 
+when you `toke add`. And also you can specify the files to download like this,
+`:select-file=1,3-5`.
 
 ```
 toke add :dir=/mnt/mov :select-file=1,3-5 /path-to/file.torrent
 ```
 
 You can change `max-concurrent-downloads` and `max-tries` options of `aria2c` 
-server dynamically with `toke`. But when you restart `aria2c` server, it 
+dynamically with `toke change-options`. But when you restart `aria2c`, it 
 recovers the original options in `aria2.conf`.
 
 ```
