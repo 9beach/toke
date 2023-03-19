@@ -1,7 +1,7 @@
 # toke
 [toke](https://github.com/9beach/toke) is a [aria2c](https://aria2.github.io) command-line client written in [Python](https://www.python.org).
 
-`toke` is largely influenced by [diana](https://github.com/baskerville/diana).
+`toke` is mainly influenced by [diana](https://github.com/baskerville/diana).
 Although largely rewritten, you can easily find the soul of `diana` in my code. 
 
 ## Installation
@@ -22,7 +22,7 @@ secret: 9898
 port:6800
 ```
 
-You know what is this. For `toke` to connect to your `aria2c`, you need to run `aria2c` in daemon mode like this, `aria2c --enable-rpc --rpc-listen-all`.
+You know what is this. For `toke` to connect to your `aria2c`, you need to run `aria2c` in daemon mode, e.g, `aria2c --enable-rpc --rpc-listen-all`.
 
 ## Usages
 
@@ -98,11 +98,19 @@ added: 41654d88bcb56854
 ```
 
 ```
+❯ toke list-compact
+ 12.6G	 90.5%	   n/a	  0KB/s	My.Mysterious.M...ELLO[myworld] 05b8b08a5d847095
+263.6M	 40.7%	   40s	3.9MB/s	Big Buck Bunny                  4ec9cb9e0912eaac
+210.6M	 57.9%	   27s	3.3MB/s	Cosmos Laundromat               05b8b08a5d847095
+123.3M	 99.8%	    5s	 40KB/s	Sintel                          e2d09371458ab4ab
+```
+
+```
 ❯ toke stats
 download: 25MB/s, upload: 0KB/s, active: 9, stopped: 8, waiting: 0
 ```
 
-After finishing downloading 3 files above.
+After finishing downloading 3 files above. You can check the finished files.
 
 ```
 ❯ toke stopped
@@ -112,6 +120,7 @@ After finishing downloading 3 files above.
 ```
 
 You can easily find what the usages below are.
+
 ```
 toke list
 toke lc
