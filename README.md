@@ -114,8 +114,10 @@ added: 41654d88bcb56854
 ```
 ❯ toke files 05b8b08a5d847095 4ec9cb9e0912eaac
 05b8b08a5d847095:
-[X]  1  100.0%  /Torrents/incompletes/Cosmos Laundromat/Cosmos Laundromat.en.srt[X]  2  100.0%  /Torrents/incompletes/Cosmos Laundromat/Cosmos Laundromat.es.srt
-[X]  3  100.0%  /Torrents/incompletes/Cosmos Laundromat/Cosmos Laundromat.fr.srt[X]  4  100.0%  /Torrents/incompletes/Cosmos Laundromat/Cosmos Laundromat.it.srt
+[X]  1  100.0%  /Torrents/incompletes/Cosmos Laundromat/Cosmos Laundromat.en.srt
+[X]  2  100.0%  /Torrents/incompletes/Cosmos Laundromat/Cosmos Laundromat.es.srt
+[X]  3  100.0%  /Torrents/incompletes/Cosmos Laundromat/Cosmos Laundromat.fr.srt
+[X]  4  100.0%  /Torrents/incompletes/Cosmos Laundromat/Cosmos Laundromat.it.srt
 [X]  5  100.0%  /Torrents/incompletes/Cosmos Laundromat/Cosmos Laundromat.mp4
 [X]  6  100.0%  /Torrents/incompletes/Cosmos Laundromat/poster.jpg
 4ec9cb9e0912eaac:
