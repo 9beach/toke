@@ -1,13 +1,16 @@
 # toke
-[toke](https://github.com/9beach/toke) is a [aria2c](https://aria2.github.io) command-line client written in [Python](https://www.python.org).
+[toke](https://github.com/9beach/toke) is a [aria2c](https://aria2.github.io)
+command-line client written in [Python](https://www.python.org).
 
 `toke` is mainly influenced by [diana](https://github.com/baskerville/diana).
 Although largely rewritten, you can easily find the soul of `diana` in my code. 
 
 ## Installation
 
-For _Microsoft Windows_ users, first [install Python](https://www.python.org/downloads/), 
-and then just copy [toke](https://github.com/9beach/toke/blob/main/toke) to your favorite directory.
+For _Microsoft Windows_ users, first
+[install Python](https://www.python.org/downloads/), and then just copy
+[toke](https://github.com/9beach/toke/blob/main/toke) to your favoritec
+directory.
 
 For _OSX_ and _Linux_ users, just copy `toke` to your favorite directory
 in `$PATH`, and `chmod 755 toke`. 
@@ -22,11 +25,14 @@ secret: 9898
 port:6800
 ```
 
-You know what is this. For `toke` to connect to your `aria2c`, you need to run `aria2c` in daemon mode, e.g, `aria2c --enable-rpc --rpc-listen-all`.
+You know what is this. For `toke` to connect to your `aria2c`, you need to run
+`aria2c` in daemon mode, e.g, `aria2c --enable-rpc --rpc-listen-all`.
 
 ## Usages
 
-For _Microsoft Windows_ users, you need to type `python c:/path-to/toke` in Command Prompt to run `toke`. But in all the usages below, I just type `toke` for _OSX_ and _Linux_ users.
+For _Microsoft Windows_ users, you need to type `python c:/path-to/toke` in 
+Command Prompt to run `toke`. But in all the usages below, I just type `toke` 
+for _OSX_ and _Linux_ users.
 
 ```
 ❯ toke
@@ -107,10 +113,10 @@ added: 41654d88bcb56854
 
 ```
 ❯ toke stats
-download: 25MB/s, upload: 0KB/s, active: 9, stopped: 8, waiting: 0
+download: 25MB/s, upload: 0KB/s, active: 4, stopped: 0, waiting: 0
 ```
 
-After finishing downloading 3 files above. You can check the finished files.
+Finishing downloads, you can check the downloaded files.
 
 ```
 ❯ toke stopped
@@ -132,30 +138,33 @@ toke co :max-tries=6 :max-concurrent-downloads=50
 toke files f81834e2c0d8d02f 615c023cf658b2a4
 ```
 
-I'll comment several usages only.
-
-You can change saved file name with `:out=name` when you `toke add`.
+I'll comment on several usages. You can change downloaded file name with 
+`:out=name` when you `toke add`.
 
 ```
 toke add :out=dad.png "https://my-webserver/pic/IMG_0422.png"
 ```
 
-You can change temporary downloading directory with `:dir=new_folder_name` when you `toke add`. And also
-you can select specific files to download in this way `:select-file=1,3-5`.
+You can change temporary downloading directory with `:dir=new_folder_name` 
+when you `toke add`. And also you can select specific files to download in 
+this way, `:select-file=1,3-5`.
 
 ```
 toke add :dir=/mnt/mov :select-file=1,3-5 /path-to/file.torrent
 ```
 
-You can change `max-concurrent-downloads` and `max-tries` options of
-`aria2c` server dynamically with `toke`. But when you restart `aria2c` server, it recovers the original options in the `aria2.conf`.
+You can change `max-concurrent-downloads` and `max-tries` options of `aria2c` 
+server dynamically with `toke`. But when you restart `aria2c` server, it 
+recovers the original options in `aria2.conf`.
 
 ```
 toke change-options :max-tries=6 :max-concurrent-downloads=50
 ```
 
-You can list all the global options of `aria2c` with the command `toke show-options`.
+You can list all the global options of `aria2c` with the command 
+`toke show-options`.
 
-For more information on OPT (variable with colon prefix, i.e., the global options of `aria2c`) in `change-options` and `add` actions, please see
+For more information on OPT (variable with colon prefix, i.e., the global 
+options of `aria2c`) in `change-options` and `add` actions, please see
 <http://aria2.github.io/manual/en/html/aria2c.html#aria2.changeGlobalOption>
 and <http://aria2.github.io/manual/en/html/aria2c.html#aria2.addTorrent>.
