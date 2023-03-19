@@ -1,0 +1,575 @@
+#! /usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import os
+import re
+import sys
+import json
+import base64
+import urllib.request
+from urllib.error import URLError, HTTPError
+
+HOST = 'localhost'
+PORT = '6800'
+SECRET = None
+
+BLACK = 30
+GREEN = 32
+BLUE = 34
+MAGENTA = 35
+
+# ':test=45 ' => {'test': '45'}
+# ' test= hi' => {'test': 'hi'}
+def kv2dict(kv, delimiter='='):
+    i = kv.find(delimiter)
+    if i == -1:
+        return None
+    key = kv[:i]
+    value = kv[i + 1 - len(kv):].strip()
+    key = re.sub('^:', '', key).strip()
+    return { key: value }
+
+def bytes2si(value):
+    n = int(value)
+
+    if n < 1024:
+        return '%5dB' % n
+    else:
+        n = n / 1024.0
+
+    if n < 1000.0:
+        return '%5.1fK' % n
+    else:
+        n = n / 1024.0
+
+    if n < 1000.0:
+        return '%5.1fM' % n
+    else:
+        n = n / 1024.0
+        return '%5.1fG' % n
+
+MAX_SEC_ETA = 9999999999
+
+def sec_eta(download_speed, remaining):
+    if download_speed == 0:
+        return MAX_SEC_ETA
+    else:
+        return remaining / download_speed
+
+def max48(name):
+    if len(name) > 48:
+        return name[:30] + '...' + name[-15:]
+    else:
+        return name
+
+def make31(name):
+    if len(name) > 31:
+        return name[:18] + '...' + name[-10:]
+    else:
+        return name + ' ' * (31 - len(name))
+
+def brave_new_eta(download_speed, remaining):
+    s = sec_eta(download_speed, remaining)
+
+    if s >= MAX_SEC_ETA:
+        return '   n/a'
+    elif s < 60:
+        return '%5ds' % s
+    elif s < 3600:
+        return '%5.1fm' % (s / 60)
+    elif s < 86400:
+        return '%5.1fh' % (s / 3600)
+    elif s < 31536000:
+        return '%5.1fd' % (s / 86400)
+    else:
+        return '%5.1fy' % (s / 31536000)
+
+def bytespersec2si(bytespersec):
+    bytespersec = int(bytespersec)
+    if bytespersec >= 10485760: # >= 10MB
+        return '%3dMB/s' % (bytespersec / 1048576)
+    elif bytespersec >= 1024000: # 1000KB-10MB
+        return '%3.1fMB/s' % (bytespersec / 1048576.0)
+    else: # <= 999KB
+        return '%3dKB/s' % (bytespersec / 1024)
+
+def progress(completed, total):
+    percent = 100
+    if float(total) > 0:
+        percent = 100 * float(completed) / float(total)
+    return '%5.1f%%' % percent
+ 
+def request_json_rpc(func, params=[]):
+    if SECRET is not None:
+        TOKEN_PREFIX = 'token:'
+        params.insert(0, TOKEN_PREFIX + SECRET)
+
+    jsonreq = json.dumps({
+        'id': 'foo',
+        'method': 'aria2.%s' % func,
+        'params': params
+    }).encode('utf-8')
+    try:
+        c = urllib.request.urlopen(
+            'http://%s:%s/jsonrpc' % (HOST, PORT),
+            jsonreq
+        )
+    except IOError as err:
+        code = -1
+        if type(err) is URLError:
+            code = err.reason.errno
+        elif type(err) is HTTPError:
+            code = err.code
+        if code == 111:
+            print('The daemon is not running.', file=sys.stderr)
+        elif code == -1:
+            print('Encountered an error of type: %s.' % type(err),
+                  file=sys.stderr)
+        else:
+            print(err, file=sys.stderr)
+        exit(1)
+
+    data = c.read().decode('utf-8')
+    response = json.loads(data)
+    return response
+
+def get_files(gids):
+    for g in gids:
+        response = request_json_rpc('getFiles', [g])
+        if not response:
+            print('Failed on %s.' % g)
+        else:
+            if len(gids) > 1:
+                print('%s: ' % magenta(g))
+            files = response['result']
+            for f in files:
+                mark = '[ ]'
+                if f['selected'] == 'true':
+                    mark = '[X]'
+                output_line = '%s %2s\t%s\t%s' % (
+                    mark,
+                    f['index'],
+                    progress(f['completedLength'], f['length']),
+                    f['path']
+                )
+
+                if int(f['completedLength']) >= int(f['length']):
+                    output_line = green(output_line)
+                print(output_line)
+
+def request_guids(fn, gids):
+    for g in gids:
+        response = request_json_rpc(fn, [g])
+        if not response:
+            print('Failed on %s.' % g)
+
+def pause_by_gid(gids):
+    request_guids('pause', gids)
+
+def resume_by_gid(gids):
+    request_guids('unpause', gids)
+
+def remove_by_gid(gids):
+    request_guids('remove', gids)
+
+def forcerm_by_gid(gids):
+    request_guids('forceRemove', gids)
+
+def clean():
+    downloads = []
+    active = request_json_rpc('tellActive')
+    if active:
+        downloads.extend(active['result'])
+    for d in downloads:
+        if 'infoHash' in d:
+            completed = int(d['completedLength'])
+            total = int(d['totalLength'])
+            if completed >= total:
+                remove_by_gid([d['gid']])
+
+def add_items(arguments):
+    options = {}
+
+    for opt in arguments:
+        if opt[0] == ':':
+            kv = kv2dict(opt)
+            if None == kv:
+                print('invalid option format: "' + opt + '"', file=sys.stderr)
+            else:
+                options.update(kv)
+
+    for item in arguments:
+        response = None
+
+        if item[0] == ':':
+            continue
+
+        if item.find('://') != -1 or item.startswith('magnet:'):
+            response = request_json_rpc('addUri', [[item], options])
+        else:
+            item_content = base64.b64encode(open(item, 'rb').read())
+            item_content = item_content.decode('utf-8')
+            if item.endswith('.torrent'):
+                response = request_json_rpc(
+                    'addTorrent',
+                    [item_content, [], options]
+                )
+            elif item.endswith('.meta4') or item.endswith('.metalink'):
+                response = request_json_rpc(
+                    'addMetalink',
+                    [item_content, options]
+                )
+
+        if not response:
+            print('Failed on %s.' % item)
+        else:
+            print('added: ' + response['result'])
+
+def pause_all():
+    request_json_rpc('pauseAll')
+
+def resume_all():
+    request_json_rpc('unpauseAll')
+
+def name_from_result(r):
+    if 'bittorrent' in r:
+        bt = r['bittorrent']
+        if 'info' in bt:
+            return bt['info']['name']
+    if 'files' in r:
+        files = r['files']
+        for f in files:
+            if 'uris' in f:
+                uris = f['uris']
+                if len(uris) > 0:
+                    return uris[0]['uri']
+            if 'path' in f:
+                return f['path']
+    return 'n/a'
+
+def list_downloads(kind, list_mode):
+    downloads = None
+
+    if kind == 'active':
+        downloads = request_json_rpc('tellActive')
+    elif kind == 'waiting':
+        downloads = request_json_rpc('tellWaiting', [0, 666])
+    elif kind == 'stopped':
+        downloads = request_json_rpc('tellStopped', [0, 666])
+
+    if downloads:
+        if list_mode == 'json':
+            print(json.dumps(downloads['result'], indent=2))
+            return
+
+        lines = []
+        for r in downloads['result']:
+            completed = float(r['completedLength'])
+            total = float(r['totalLength'])
+            remaining = total - completed
+            download_speed = float(r['downloadSpeed'])
+            name = name_from_result(r)
+
+            if list_mode == 'normal':
+                output_line = '%s\t%s\t%s\t%s\t%s' % (
+                    bytes2si(total),
+                    progress(completed, total),
+                    brave_new_eta(download_speed, remaining),
+                    bytespersec2si(download_speed),
+                    max48(name),
+                )
+            elif list_mode == 'compact':
+                output_line = '%s\t%s\t%s\t%s\t%s\t%s' % (
+                    bytes2si(total),
+                    progress(completed, total),
+                    brave_new_eta(download_speed, remaining),
+                    bytespersec2si(download_speed),
+                    make31(name),
+                    r['gid'],
+                )
+            else:
+                number_of_seeders = 'n/a'
+                if 'numSeeders' in r:
+                    number_of_seeders = r['numSeeders']
+
+                output_line = '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s/%s\t%s' % (
+                    r['gid'],
+                    bytes2si(completed),
+                    bytes2si(total),
+                    progress(completed, total),
+                    brave_new_eta(download_speed, remaining),
+                    bytespersec2si(download_speed),
+                    bytespersec2si(r['uploadSpeed']),
+                    number_of_seeders, r['connections'],
+                    name,
+                )
+
+            if completed >= total:
+                output_line = green(output_line)
+            elif download_speed > 0:
+                output_line = blue(output_line)
+
+            sec = sec_eta(download_speed, remaining)
+            lines.append([sec, re.sub('[-._]', ' ', name), output_line])
+
+        lines = sorted(lines, reverse=True)
+        for l in lines:
+            print(l[2])
+
+EXIT_CODES = {
+    '1': 'unknown',
+    '2': 'timeout',
+    '3': 'resource not found',
+    '4': 'resources not found',
+    '5': 'download speed too slow',
+    '6': 'network problem',
+    '7': 'unfinished downloads',
+    '8': 'resume not supported',
+    '9': 'not enough disk space',
+    '10': 'piece length differ',
+    '11': 'was downloading the same file',
+    '12': 'was downloading the same info hash',
+    '13': 'file already existed',
+    '14': 'renaming failed',
+    '15': 'could not open existing file',
+    '16': 'could not create new or truncate existing',
+    '17': 'file I/O',
+    '18': 'could not create directory',
+    '19': 'name resolution failed',
+    '20': 'could not parse metalink',
+    '21': 'FTP command failed',
+    '22': 'HTTP response header was bad or unexpected',
+    '23': 'too many redirections',
+    '24': 'HTTP authorization failed',
+    '25': 'could not parse bencoded file',
+    '26': 'torrent was corrupted or missing informations',
+    '27': 'bad magnet URI',
+    '28': 'bad/unrecognized option or unexpected option argument',
+    '29': 'the remote server was unable to handle the request',
+    '30': 'could not parse JSON-RPC request'
+}
+
+def show_errors():
+    stopped = request_json_rpc('tellStopped', [0, 666])
+    if stopped:
+        for r in stopped['result']:
+            if 'status' in r and r['status'] == 'error':
+                gid = r['gid']
+                code = r['errorCode']
+                error = EXIT_CODES[code]
+                print('%3s %s (error %s)' % (gid, error, code))
+
+def shutdown():
+    gs = request_json_rpc('shutdown')
+    res = gs['result']
+    print(res)
+
+def show_options():
+    res = request_json_rpc('getGlobalOption')
+    opts = re.sub('(^\{"|"\}$)', "", json.dumps(res['result']))
+    opts = re.sub('": "', ': ', opts)
+    opts = re.sub('", "', '\n', opts)
+    print(opts)
+
+def change_options(arguments):
+    options = {}
+    for arg in arguments:
+        kv = kv2dict(arg)
+        if None == kv:
+            print('invalid format: "' + arg + '"', file=sys.stderr)
+        else:
+            options.update(kv)
+    return request_json_rpc('changeGlobalOption', [options])
+
+def show_stats():
+    gs = request_json_rpc('getGlobalStat')
+    stats = gs['result']
+    print('download: %s, upload: %s, active: %s, stopped: %s, waiting: %s' % (
+        bytespersec2si(stats['downloadSpeed']).lstrip(),
+        bytespersec2si(stats['uploadSpeed']).lstrip(),
+        stats['numActive'], stats['numStopped'], stats['numWaiting'],
+    ))
+
+def grey(s):
+    return s
+
+def green(s):
+    return colored_string(GREEN, s)
+
+def blue(s):
+    return colored_string(BLUE, s)
+
+def magenta(s):
+    return colored_string(MAGENTA, s)
+
+def colored_string(c, s):
+    if sys.stdout.isatty():
+        return '\033[1;%im%s\033[0m' % (c, s)
+    else:
+        return s
+
+def usage():
+    print(
+'''Usage: toke ACTION [OPT] [...]
+
+Actions
+    add [OPT ...] ITEM [...]    Download the given items (local or remote URLs 
+                                to torrents, etc.).
+    l/list                      Print list of active downloads.
+    lc/list-compact             Print compact list of active downloads.
+    ll/list-long                Print long list of active downloads.
+    lj/list-json                Print JSON response of active downloads.
+    p/paused                    Print list of paused downloads.
+    pc/paused-compact           Print compact list of paused downloads.
+    pl/paused-long              Print long list of paused downloads.
+    pj/paused-json              Print JSON response of paused downloads.
+    s/stopped                   Print list of stopped downloads.
+    sc/stopped-compact          Print compact list of stopped downloads.
+    sl/stopped-long             Print long list of stopped downloads.
+    sj/stopped-json             Print JSON response of stopped downloads.
+    e/errors                    Print the list of errors.
+    f/files GID [...]           Print files of the given GIDs.
+    st/stats                    Print download bandwidth statistics.
+    so/show-options             Print global options of aria2.
+    clear/clean                 Stop seeding completed downloads.
+    co/change-options OPT [...] Change global options of aria2 dynamically.
+    forcerm GID [...]           Forcibly remove downloads of the given GIDs.
+    pause GID [...]             Pause the downloads of the given GIDs.
+    pg/purge                    Clear the list of stopped downloads and errors.
+    re/resume GID [...]         Resume the downloads of the given GIDs.
+    rm/remove/stop GID [...]    Remove the downloads of the given GIDs.
+    shutdown                    Shut down aria2.
+    sleep                       Pause all the active downloads.
+    wake                        Resume all the paused downloads.
+
+Examples
+    toke list
+    toke lc
+    toke add /path-to/file.torrent "magnet:?xt=urn:btih:FFC7E738EAA4CD4EC..."
+    toke add :dir=/mnt/mov :select-file=1,3-5 /path-to/file.torrent
+    toke add :out=dad.png "https://my-webserver/pic/IMG_0422.png"
+    toke pause 9ba47a7aa365473f cdacca57aef44ec6
+    toke co :max-tries=6 :max-concurrent-downloads=50
+    toke files f81834e2c0d8d02f 615c023cf658b2a4
+
+For more information on OPT in `change-options` and `add` actions, please see
+<http://aria2.github.io/manual/en/html/aria2c.html#aria2.changeGlobalOption>
+and <http://aria2.github.io/manual/en/html/aria2c.html#aria2.addTorrent>.'''
+    )
+    sys.exit()
+
+def main():
+    global HOST, PORT, SECRET
+
+    # First, reads `~/.toke`
+    try:
+        with open(os.path.expanduser('~') + '/.toke') as conf_file:
+            kvs = {}
+            lines = conf_file.read().splitlines() 
+            for l in lines:
+                kv = kv2dict(l, ':')
+                if None == kv:
+                    print('invalid conf format: "' + l + '"', file=sys.stderr)
+                else:
+                    kvs.update(kv)
+            if 'host' in kvs:
+                HOST = kvs['host']
+            if 'port' in kvs:
+                PORT = kvs['port']
+            if 'secret' in kvs:
+                SECRET = kvs['secret']
+    except:
+        pass
+    
+    # Second, overrides the variables with the environment variables
+    if os.getenv('TOKE_HOST'):
+        HOST = os.getenv('TOKE_HOST')
+    if os.getenv('TOKE_PORT'):
+        PORT = os.getenv('TOKE_PORT')
+    if os.getenv('TOKE_SECRET'):
+        SECRET = os.getenv('TOKE_SECRET')
+
+    args = sys.argv[1:]
+
+    if len(args) == 0 or args[0] == '-h' or args[0] == '--help':
+        usage()
+        exit(0)
+
+    action = args[0]
+    arguments = args[1:]
+
+    ARGS_ACTIONS = (
+        'add', 'rm', 'remove', 'stop', 'forcerm', 'pause', 're', 'resume', 
+        'f', 'files', 'co', 'change-options'
+    )
+
+    if action not in ARGS_ACTIONS and len(arguments) > 0:
+        print('Action \'%s\' takes no arguments' % action, file=sys.stderr)
+        sys.exit(1)
+    elif action in ARGS_ACTIONS and len(arguments) < 1:
+        print(
+            'No arguments given for action \'%s\'' % action,
+            file=sys.stderr
+        )
+        sys.exit(1)
+
+    if action in ('l', 'list'):
+        list_downloads('active', 'normal')
+    elif action in ('lc', 'list-compact'):
+        list_downloads('active', 'compact')
+    elif action in ('ll', 'list-long'):
+        list_downloads('active', 'long')
+    elif action in ('lj', 'list-json'):
+        list_downloads('active', 'json')
+    elif action in ('p', 'paused'):
+        list_downloads('waiting', 'normal')
+    elif action in ('pc', 'paused-compact'):
+        list_downloads('waiting', 'compact')
+    elif action in ('pl', 'paused-long'):
+        list_downloads('waiting', 'long')
+    elif action in ('pj', 'paused-json'):
+        list_downloads('waiting', 'json')
+    elif action in ('s', 'stopped'):
+        list_downloads('stopped', 'normal')
+    elif action in ('sc', 'stopped-compact'):
+        list_downloads('stopped', 'compact')
+    elif action in ('sl', 'stopped-long'):
+        list_downloads('stopped', 'long')
+    elif action in ('sj', 'stopped-json'):
+        list_downloads('stopped', 'json')
+    elif action in ('e', 'errors'):
+        show_errors()
+    elif action in ('so', 'show-options'):
+        show_options()
+    elif action in ('st', 'stats'):
+        show_stats()
+    elif action == 'sleep':
+        request_json_rpc('pauseAll')
+    elif action == 'wake':
+        request_json_rpc('unpauseAll')
+    elif action in ('pg', 'purge'):
+        request_json_rpc('purgeDownloadResult')
+    elif action in ('clean', 'clear'):
+        clean()
+    elif action == 'shutdown':
+        shutdown()
+    elif action == 'add':
+        add_items(arguments)
+    elif action in ('rm', 'remove', 'stop'):
+        remove_by_gid(arguments)
+    elif action == 'forcerm':
+        forcerm_by_gid(arguments)
+    elif action == 'pause':
+        pause_by_gid(arguments)
+    elif action in ('re', 'resume'):
+        resume_by_gid(arguments)
+    elif action in ('f', 'files'):
+        get_files(arguments)
+    elif action in ('co', 'change-options'):
+        change_options(arguments)
+    else:
+        print('Unknown action: %s' % action, file=sys.stderr)
+        exit(1)
+
+if __name__ == '__main__':
+    main()
