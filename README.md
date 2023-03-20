@@ -3,19 +3,17 @@
 command-line client written in [Python](https://www.python.org).
 
 `toke` is mainly influenced by [diana](https://github.com/baskerville/diana).
-Although largely rewritten, you can easily find the soul of `diana` in my code. 
+Although largely rewritten, you can easily find the soul of `diana` in my code.
 
 ## Installation
 
 For _Microsoft Windows_ users, first
 [install Python](https://www.python.org/downloads/), and then just copy
 [toke](https://github.com/9beach/toke/blob/main/toke) to your favoritec
-directory.
+directory. For _OSX_ and _Linux_ users, just copy `toke` to your favorite
+directory in `$PATH`, and `chmod 755 toke`.
 
-For _OSX_ and _Linux_ users, just copy `toke` to your favorite directory
-in `$PATH`, and `chmod 755 toke`. 
-
-At last, make your `.toke` file in your home directory. A typical `.toke` is 
+At last, make your `.toke` file in your home directory. A typical `.toke` is
 like this.
 
 ```
@@ -25,13 +23,16 @@ secret: 9898
 port:6800
 ```
 
-You know what is this. For `toke` to connect to your `aria2c`, you need to run
-`aria2c` in daemon mode, e.g, `aria2c --enable-rpc --rpc-listen-all`.
+You know what is this. If there is no `.toke` file, `toke` tries to read the
+environment variables of `TOKE_HOST`, `TOKE_PORT`, and `TOKE_SECRET`.
+
+For `toke` to connect to your `aria2c`, you need to run `aria2c` in daemon mode,
+e.g, `aria2c --enable-rpc --rpc-listen-all`.
 
 ## Usages
 
-For _Microsoft Windows_ users, you need to type `python c:/path-to/toke` in 
-Command Prompt to run `toke`. But in all the usages below, I just type `toke` 
+For _Microsoft Windows_ users, you need to type `python c:/path-to/toke` in
+Command Prompt to run `toke`. But in all the usages below, I just type `toke`
 for _OSX_ and _Linux_ users.
 
 ```
@@ -160,7 +161,7 @@ You can change downloading file name with `:out=new-name` when you `toke add`.
 toke add :out=dad.png "https://my-webserver/pic/IMG_0422.png"
 ```
 
-You can change temporary downloading directory with `:dir=new-destination` 
+You can change temporary downloading directory with `:dir=new-destination`
 when you `toke add`. And also you can specify the files to download like this,
 `:select-file=1,3-5`.
 
@@ -168,18 +169,18 @@ when you `toke add`. And also you can specify the files to download like this,
 toke add :dir=/mnt/mov :select-file=1,3-5 /path-to/file.torrent
 ```
 
-You can change `max-concurrent-downloads` and `max-tries` options of `aria2c` 
-dynamically with `toke change-options`. But when you restart `aria2c`, it 
+You can change `max-concurrent-downloads` and `max-tries` options of `aria2c`
+dynamically with `toke change-options`. But when you restart `aria2c`, it
 recovers the original options in `aria2.conf`.
 
 ```
 toke change-options :max-tries=6 :max-concurrent-downloads=50
 ```
 
-You can list all the global options of `aria2c` with the command 
+You can list all the global options of `aria2c` with the command
 `toke show-options`.
 
-For more information on OPT (variable with colon prefix, i.e., the global 
+For more information on OPT (variable with colon prefix, i.e., the global
 options of `aria2c`) in `change-options` and `add` actions, please see
 <http://aria2.github.io/manual/en/html/aria2c.html#aria2.changeGlobalOption>
 and <http://aria2.github.io/manual/en/html/aria2c.html#aria2.addTorrent>.
