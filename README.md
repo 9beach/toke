@@ -9,9 +9,14 @@ Although largely rewritten, you can easily find the soul of `diana` in my code.
 
 For _Microsoft Windows_ users, first
 [install Python](https://www.python.org/downloads/), and then just copy
-[toke](https://github.com/9beach/toke/blob/main/toke) to your favoritec
-directory. For _OSX_ and _Linux_ users, just copy `toke` to your favorite
-directory in `$PATH`, and `chmod 755 toke`.
+[toke](https://raw.githubusercontent.com/9beach/toke/main/toke -o /usr/local/bin/toke)
+to your favorite directory. In UNIX-like OSes (MacOS, Linux, BSD), you can 
+install `toke` in the following way:
+
+```
+sudo curl -L https://raw.githubusercontent.com/9beach/toke/main/toke -o /usr/local/bin/toke
+sudo chmod a+rx /usr/local/bin/toke
+```
 
 At last, make your `.toke` file in your home directory. A typical `.toke` is
 like this.
