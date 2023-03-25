@@ -9,7 +9,7 @@ Although largely rewritten, you can easily find the soul of `diana` in my code.
 
 For _Microsoft Windows_ users, first
 [install Python](https://www.python.org/downloads/), and then just copy
-[toke](https://raw.githubusercontent.com/9beach/toke/main/toke -o /usr/local/bin/toke)
+[toke](https://raw.githubusercontent.com/9beach/toke/main/toke)
 to your favorite directory. In UNIX-like OSes (MacOS, Linux, BSD), you can 
 install `toke` in the following way:
 
