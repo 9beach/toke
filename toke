@@ -415,32 +415,32 @@ def usage():
 Actions
     add [OPT ...] ITEM [...]    Download the given items (local or remote URLs 
                                 to torrents, etc.).
-    l/list                      Print list of active downloads.
-    lc/list-compact             Print compact list of active downloads.
-    ll/list-long                Print long list of active downloads.
-    lj/list-json                Print JSON response of active downloads.
-    p/paused                    Print list of paused downloads.
-    pc/paused-compact           Print compact list of paused downloads.
-    pl/paused-long              Print long list of paused downloads.
-    pj/paused-json              Print JSON response of paused downloads.
-    s/stopped                   Print list of stopped downloads.
-    sc/stopped-compact          Print compact list of stopped downloads.
-    sl/stopped-long             Print long list of stopped downloads.
-    sj/stopped-json             Print JSON response of stopped downloads.
-    e/errors                    Print the list of errors.
-    f/files GID [...]           Print files of the given GIDs.
-    st/stats                    Print download bandwidth statistics.
-    so/show-options             Print global options of aria2.
-    clear/clean                 Stop seeding completed downloads.
-    co/change-options OPT [...] Change global options of aria2 dynamically.
+    list/l                      Print list of active downloads.
+    list-compact/lc             Print compact list of active downloads.
+    list-long/ll                Print long list of active downloads.
+    list-json/lj                Print JSON response of active downloads.
+    paused/p                    Print list of paused downloads.
+    paused-compact/pc           Print compact list of paused downloads.
+    paused-long/pl              Print long list of paused downloads.
+    paused-json/pj              Print JSON response of paused downloads.
+    stopped/s                   Print list of stopped downloads.
+    stopped-compact/sc          Print compact list of stopped downloads.
+    stopped-long/sl             Print long list of stopped downloads.
+    stopped-json/sj             Print JSON response of stopped downloads.
+    errors/e                    Print the list of errors.
+    files/f GID [...]           Print files of the given GIDs.
+    stats/st                    Print download bandwidth statistics.
+    show-options/so             Print global options of aria2.
+    change-options/co OPT [...] Change global options of aria2 dynamically.
+    clean/clear                 Stop seeding completed downloads.
     forcerm GID [...]           Forcibly remove downloads of the given GIDs.
     pause GID [...]             Pause the downloads of the given GIDs.
-    pg/purge                    Clear the list of stopped downloads and errors.
-    re/resume GID [...]         Resume the downloads of the given GIDs.
-    rm/remove/stop GID [...]    Remove the downloads of the given GIDs.
-    shutdown                    Shut down aria2.
+    purge/pg                    Clear the list of stopped downloads and errors.
+    resume/re GID [...]         Resume the downloads of the given GIDs.
+    stop/remove/rm GID [...]    Remove the downloads of the given GIDs.
     sleep                       Pause all the active downloads.
     wake                        Resume all the paused downloads.
+    shutdown                    Shut down aria2.
 
 Examples
     toke list
