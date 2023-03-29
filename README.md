@@ -3,7 +3,7 @@
 command-line client written in [Python](https://www.python.org).
 
 `toke` is mainly influenced by [diana](https://github.com/baskerville/diana).
-Although largely rewritten, you can easily find the soul of `diana` in my code.
+Although largely rewritten, you can easily feel the soul of `diana` in my code.
 
 ## Installation
 
@@ -29,7 +29,7 @@ port:6800
 ```
 
 You know what is this. If there is no `.toke` file, `toke` tries to read the
-environment variables of `TOKE_HOST`, `TOKE_PORT`, and `TOKE_SECRET`.
+environment variables, `TOKE_HOST`, `TOKE_PORT`, and `TOKE_SECRET`.
 
 For `toke` to connect to your `aria2c`, you need to run `aria2c` in daemon mode,
 e.g, `aria2c --enable-rpc --rpc-listen-all`.
