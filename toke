@@ -366,7 +366,7 @@ def shutdown():
 
 def show_options():
     res = request_json_rpc('getGlobalOption')
-    opts = re.sub('(^\{"|"\}$)', "", json.dumps(res['result']))
+    opts = re.sub(r'(^\{"|"\}$)', "", json.dumps(res['result']))
     opts = re.sub('": "', ': ', opts)
     opts = re.sub('", "', '\n', opts)
     print(opts)
